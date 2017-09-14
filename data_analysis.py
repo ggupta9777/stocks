@@ -60,15 +60,30 @@ class MF:
 
 	def avgByType(self, fund_type):
 		A = self.returnsByType(fund_type)
-		avg = np.sort(np.nanmean(A, axis=1))
+		avg = np.nanmean(A, axis=1)
+		std = np.nanstd(A, axis=1)
 		ind = np.where(np.isfinite(avg))
-		return avg[ind], self.fundsByType(fund_type)[0][ind], ind
+		avg = avg[ind]
+		std = std[ind]
+		funds = self.fundsByType(fund_type)[0][ind]
+		ind_out = np.argsort(avg)
+		avg = avg[ind_out]
+		std = std[ind_out]
+		funds = funds[ind_out]
+		return avg, std, funds
 
 	def stdByType(self, fund_type):
+		# returns: std deviation, fund names, indices to sort by standard deviation
 		A = self.returnsByType(fund_type)
-		std = np.sort(np.nanstd(A, axis=1))
-		ind = np.where(np.isfinite(std))
-		return std[ind], self.fundsByType(fund_type)[0][ind], ind
+		std = np.nanstd(A, axis=1)
+                ind_out = np.argsort(std)
+                ind = np.where(np.isfinite(std))
+                std = std[ind]
+                std = np.sort(std)
+                l = len(std)
+                ind_out = ind_out[:l]
+
+		return std[ind], self.fundsByType(fund_type)[0][ind_out], ind_out
 
 
 
@@ -76,25 +91,31 @@ if __name__ == "__main__":
 	
 	mutual_funds = MF ("moneycontrol.xlsx")
 	mutual_funds.initialize()
-	A = mutual_funds.returnsByType('diverse_equity')
-	avg, fund_avg, ind_avg = mutual_funds.avgByType('diverse_equity')
-	std, fund_std, ind_std = mutual_funds.stdByType('diverse_equity')
+	fund_type = 'diverse_equity'
+	A = mutual_funds.returnsByType(fund_type)
+	avg, std, fund_avg = mutual_funds.avgByType(fund_type)
+	# std, fund_std, ind_std = mutual_funds.stdByType(fund_type)
 	n_best = min(20, min(len(avg), len(std)))
-	x_avg = np.arange(n_best)
-	plt.figure(1)
-	plt.xticks(x_avg, fund_avg[-n_best:], rotation=30)
-	plt.plot(x_avg, avg[-n_best:])
-	plt.scatter(x_avg, avg[-n_best:])
-	plt.subplots_adjust(bottom=0.20)	
-	plt.title('AVG')
 	
-	plt.figure(2)
-	x_std = np.arange(n_best)
-        plt.xticks(x_std, fund_std[:n_best], rotation=30)
-        plt.plot(x_std, std[:n_best])
-        plt.scatter(x_std, std[:n_best])
-        plt.subplots_adjust(bottom=0.20)
-        plt.title('std deviation')
+	x_avg = np.arange(n_best)
+	plt.figure(1, facecolor='white')
+	plt.xticks(x_avg, fund_avg[-n_best:], rotation=30)
+	plt_avg, = plt.plot(x_avg, avg[-n_best:])
+	plt_std, = plt.plot(x_avg, std[-n_best:])
+	plt.scatter(x_avg, avg[-n_best:])
+	plt.subplots_adjust(bottom=0.25)	
+	plt.legend([plt_avg, plt_std], ['average return', 'std deviation'])
+	plt.title('top performing ' + fund_type + ' funds (3-5 yrs)')
+	plt.xlabel('fund type')
+	plt.ylabel('% return')	
+
+	# plt.figure(2)
+	# x_std = np.arange(n_best)
+        # plt.xticks(x_std, fund_std[:n_best], rotation=30)
+        # plt.plot(x_std, std[:n_best])
+        # plt.scatter(x_std, std[:n_best])
+        # plt.subplots_adjust(bottom=0.20)
+        # plt.title('std deviation')
 
 
 # plt.plot(np.arange(0, len(A[:, 0])), np.array(avg[2]))
