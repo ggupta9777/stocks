@@ -2,6 +2,7 @@ import numpy as np
 import csv
 import pandas
 import matplotlib.pyplot as plt
+
 class MF: 
 
 	def __init__ (self, excel_name):
@@ -57,14 +58,44 @@ class MF:
 		data = data[0][1:]
 		return data
 
+	def avgByType(self, fund_type):
+		A = self.returnsByType(fund_type)
+		avg = np.sort(np.nanmean(A, axis=1))
+		ind = np.where(np.isfinite(avg))
+		return avg[ind], self.fundsByType(fund_type)[0][ind], ind
+
+	def stdByType(self, fund_type):
+		A = self.returnsByType(fund_type)
+		std = np.sort(np.nanstd(A, axis=1))
+		ind = np.where(np.isfinite(std))
+		return std[ind], self.fundsByType(fund_type)[0][ind], ind
+
+
 
 if __name__ == "__main__":
 	
 	mutual_funds = MF ("moneycontrol.xlsx")
 	mutual_funds.initialize()
 	A = mutual_funds.returnsByType('diverse_equity')
-	avg = np.nanmean(A, axis=1)
-	std = np.nanstd(A, axis=1)
-	print avg
-	# plt.plot(np.arange(0, len(A[:, 0])), np.array(avg[2]))
-	# plt.show()
+	avg, fund_avg, ind_avg = mutual_funds.avgByType('diverse_equity')
+	std, fund_std, ind_std = mutual_funds.stdByType('diverse_equity')
+	n_best = min(20, min(len(avg), len(std)))
+	x_avg = np.arange(n_best)
+	plt.figure(1)
+	plt.xticks(x_avg, fund_avg[-n_best:], rotation=30)
+	plt.plot(x_avg, avg[-n_best:])
+	plt.scatter(x_avg, avg[-n_best:])
+	plt.subplots_adjust(bottom=0.20)	
+	plt.title('AVG')
+	
+	plt.figure(2)
+	x_std = np.arange(n_best)
+        plt.xticks(x_std, fund_std[:n_best], rotation=30)
+        plt.plot(x_std, std[:n_best])
+        plt.scatter(x_std, std[:n_best])
+        plt.subplots_adjust(bottom=0.20)
+        plt.title('std deviation')
+
+
+# plt.plot(np.arange(0, len(A[:, 0])), np.array(avg[2]))
+	plt.show()
