@@ -2,6 +2,7 @@ import numpy as np
 import csv
 import pandas
 import matplotlib.pyplot as plt
+import sys
 
 class MF: 
 
@@ -62,7 +63,8 @@ class MF:
 		A = self.returnsByType(fund_type)
 		avg = np.nanmean(A, axis=1)
 		std = np.nanstd(A, axis=1)
-		ind = np.where(np.isfinite(avg))
+		three = A[:, 2]
+		ind = np.where(np.isfinite(A[:, 2]))
 		avg = avg[ind]
 		std = std[ind]
 		funds = self.fundsByType(fund_type)[0][ind]
@@ -70,7 +72,7 @@ class MF:
 		avg = avg[ind_out]
 		std = std[ind_out]
 		funds = funds[ind_out]
-		return avg, std, funds
+		return avg, std, funds, three
 
 	def stdByType(self, fund_type):
 		# returns: std deviation, fund names, indices to sort by standard deviation
@@ -91,20 +93,31 @@ if __name__ == "__main__":
 	
 	mutual_funds = MF ("moneycontrol.xlsx")
 	mutual_funds.initialize()
-	fund_type = 'diverse_equity'
+	if len(sys.argv) == 2:
+		fund_type = sys.argv[1]
+	else:
+		fund_type = 'elss'
 	A = mutual_funds.returnsByType(fund_type)
-	avg, std, fund_avg = mutual_funds.avgByType(fund_type)
+	avg, std, fund_avg, three = mutual_funds.avgByType(fund_type)
 	# std, fund_std, ind_std = mutual_funds.stdByType(fund_type)
 	n_best = min(20, min(len(avg), len(std)))
 	
 	x_avg = np.arange(n_best)
-	plt.figure(1, facecolor='white')
-	plt.xticks(x_avg, fund_avg[-n_best:], rotation=30)
+	
+	fig = plt.figure(1, facecolor='white')
+	plt.xticks(x_avg, fund_avg[-n_best:], rotation=45)
+	
+	ax = fig.gca()
+	ax.set_xticks(np.arange(0, x_avg[-1], 1))
+	ax.set_yticks(np.arange(0, np.max(avg)+5, 2))
+ 	plt.grid()	
 	plt_avg, = plt.plot(x_avg, avg[-n_best:])
 	plt_std, = plt.plot(x_avg, std[-n_best:])
+	plt.plot(x_avg, avg[-n_best:]+std[-n_best:])
+	plt.plot(x_avg, avg[-n_best:]-std[-n_best:])
 	plt.scatter(x_avg, avg[-n_best:])
 	plt.subplots_adjust(bottom=0.25)	
-	plt.legend([plt_avg, plt_std], ['average return', 'std deviation'])
+	plt.legend([plt_avg, plt_std], ['average return', 'std deviation'], loc='best')
 	plt.title('top performing ' + fund_type + ' funds (3-5 yrs)')
 	plt.xlabel('fund type')
 	plt.ylabel('% return')	
